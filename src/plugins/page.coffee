@@ -1,6 +1,7 @@
 
 path = require 'path'
-gm = require('gm')
+gm = require 'gm'
+fs = require 'fs'
 async = require 'async'
 underscore = require 'underscore'
 moment = require 'moment'
@@ -23,6 +24,18 @@ class Page extends ContentPlugin
 
   getHtml: (base='/') ->
     @_content
+
+  getRawHtml: ->
+    raw = fs.readFileSync( 'build/' + @getFilename() ).toString()
+    z = '<section class="content">'
+    idx = ~~raw.indexOf(z) + z.length
+    idx2 = ~~raw.indexOf('</section>')
+    if idx
+      res = raw.substr idx, (idx2 - idx)
+      console.log res
+      return res 
+    else
+      return raw
 
   getUrl: (base) ->
     super(base).replace /index\.html$/, ''
@@ -57,6 +70,9 @@ class Page extends ContentPlugin
         extend ctx, locals
         template.render ctx, callback
       (result, callback) =>
+        console.log 'on my wany', @.getFilename()
+        if @.getFilename() == 'feed.xml'
+          return callback(null,result)
         jsdom.env({
           html: result.toString()
           src: [
@@ -72,8 +88,8 @@ class Page extends ContentPlugin
               .resize(xsiz,ysiz).noProfile()
               .write ('contents/' + newpath), (err) =>
               gm('contents/' + newpath).size (err, value) =>
-                console.log 'size', newpath, value
-                x.src = '/' + newpath #'http://paulbohm.com' + x.src
+                # console.log 'size', newpath, value
+                x.src = 'http://paulbohm.com/' + newpath #'http://paulbohm.com' + x.src
                 $(x).attr('height', value['height'])
                 $(x).attr('width', value['width'])
                 callback(null, value)
@@ -97,8 +113,9 @@ class Page extends ContentPlugin
                 resizecalls.push( [x, oldpath, newpath, xsiz, ysiz] )
 
             async.map resizecalls, resizecall, (err, results) =>
-              console.log 'resize finished', err, results
-              winbuf = new Buffer(window.document.innerHTML.toString())
+              # console.log 'resize finished', err, results
+              winstr = window.document.innerHTML.toString()
+              winbuf = new Buffer(winstr)
               callback(null, winbuf)
         })
     ], callback

@@ -72,6 +72,7 @@ class MarkdownPage extends Page
 
   getHtml: (base) ->
     ### parse @markdown and return html. also resolves any relative urls to absolute ones ###
+    base = 'http://paulbohm.com/'
     @_html ?= parseMarkdownSync @_content, @getLocation(base) # cache html
     return @_html
 
